@@ -86,20 +86,17 @@ def pregunta_01():
     input_dir = base_dir / "input"
     output_dir = base_dir / "output"
 
-    # Crear carpeta de salida
+    
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Descomprimir solo si no existe la carpeta input
+
     if not input_dir.exists():
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             names = zip_ref.namelist()
 
-            # Si el zip ya contiene una carpeta input/, se extrae en files/
             if any(name.startswith("input/") for name in names):
                 zip_ref.extractall(base_dir)
             else:
-                # Si el zip contiene directamente train/ y test/,
-                # se extrae dentro de files/input/
                 input_dir.mkdir(parents=True, exist_ok=True)
                 zip_ref.extractall(input_dir)
 
