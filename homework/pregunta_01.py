@@ -71,3 +71,61 @@ def pregunta_01():
 
 
     """
+    """
+    Descomprime files/input.zip y genera los datasets CSV
+    files/output/train_dataset.csv y files/output/test_dataset.csv
+    """
+
+    import zipfile
+    from pathlib import Path
+
+    import pandas as pd
+
+    base_dir = Path("files")
+    zip_path = base_dir / "input.zip"
+    input_dir = base_dir / "input"
+    output_dir = base_dir / "output"
+
+    # Crear carpeta de salida
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Descomprimir solo si no existe la carpeta input
+    if not input_dir.exists():
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            names = zip_ref.namelist()
+
+            # Si el zip ya contiene una carpeta input/, se extrae en files/
+            if any(name.startswith("input/") for name in names):
+                zip_ref.extractall(base_dir)
+            else:
+                # Si el zip contiene directamente train/ y test/,
+                # se extrae dentro de files/input/
+                input_dir.mkdir(parents=True, exist_ok=True)
+                zip_ref.extractall(input_dir)
+
+    def make_dataset(split):
+        rows = []
+
+        for target in ["negative", "neutral", "positive"]:
+            folder = input_dir / split / target
+
+            for file_path in sorted(folder.glob("*.txt")):
+                try:
+                    phrase = file_path.read_text(encoding="utf-8").strip()
+                except UnicodeDecodeError:
+                    phrase = file_path.read_text(encoding="latin-1").strip()
+
+                rows.append(
+                    {
+                        "phrase": phrase,
+                        "target": target,
+                    }
+                )
+
+        return pd.DataFrame(rows)
+
+    train_dataset = make_dataset("train")
+    test_dataset = make_dataset("test")
+
+    train_dataset.to_csv(output_dir / "train_dataset.csv", index=False)
+    test_dataset.to_csv(output_dir / "test_dataset.csv", index=False)
